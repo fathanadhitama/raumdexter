@@ -39,14 +39,45 @@
 		D059AFEB30468BA3001B4CE9 /* Raumdexter Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Raumdexter Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D065677F304AB94100C9BD2E /* Exceptions for "Raumdexter" folder in "Raumdexter" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D059AFDD30468BA2001B4CE9 /* Raumdexter */;
+		};
+		D0EC7F943049B85300A2EA89 /* Exceptions for "Raumdexter Watch App" folder in "Raumdexter" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/LocationSample.swift,
+			);
+			target = D059AFDD30468BA2001B4CE9 /* Raumdexter */;
+		};
+		D0EC7F9B3049BDD900A2EA89 /* Exceptions for "Raumdexter" folder in "Raumdexter Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/MatchGPSPayload.swift,
+			);
+			target = D059AFEA30468BA3001B4CE9 /* Raumdexter Watch App */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D059AFE030468BA2001B4CE9 /* Raumdexter */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D065677F304AB94100C9BD2E /* Exceptions for "Raumdexter" folder in "Raumdexter" target */,
+				D0EC7F9B3049BDD900A2EA89 /* Exceptions for "Raumdexter" folder in "Raumdexter Watch App" target */,
+			);
 			path = Raumdexter;
 			sourceTree = "<group>";
 		};
 		D059AFEF30468BA3001B4CE9 /* Raumdexter Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D0EC7F943049B85300A2EA89 /* Exceptions for "Raumdexter Watch App" folder in "Raumdexter" target */,
+			);
 			path = "Raumdexter Watch App";
 			sourceTree = "<group>";
 		};
@@ -99,6 +130,7 @@
 				D059AFDB30468BA2001B4CE9 /* Frameworks */,
 				D059AFDC30468BA2001B4CE9 /* Resources */,
 				D059AFFB30468BA3001B4CE9 /* Embed Watch Content */,
+				D0656C2D304D96EF00C9BD2E /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -191,6 +223,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D0656C2D304D96EF00C9BD2E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [[ \"$(uname -m)\" == arm64 ]]; then\n    export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which swiftlint > /dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint t installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		D059AFDA30468BA2001B4CE9 /* Sources */ = {
@@ -345,7 +399,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Raumdexter;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "To track player position and generate heatmaps";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.fathanadhitama.Raumdexter;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -378,7 +434,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Raumdexter;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "To track player position and generate heatmaps";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.fathanadhitama.Raumdexter;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -410,8 +468,11 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = C827UJKTU2;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Raumdexter/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Raumdexter;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save match cards to your photo library";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -445,8 +506,11 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = C827UJKTU2;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Raumdexter/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Raumdexter;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save match cards to your photo library";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

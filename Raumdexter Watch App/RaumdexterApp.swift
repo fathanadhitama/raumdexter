@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct Raumdexter_Watch_AppApp: App {
+struct RaumdexterWatchApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
