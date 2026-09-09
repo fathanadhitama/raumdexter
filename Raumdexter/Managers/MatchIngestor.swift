@@ -13,21 +13,18 @@ import SwiftData
 final class MatchIngestor: ObservableObject {
     private let watchConnector: WatchConnector
     private let modelContext: ModelContext
-    private var cancellables = Set<AnyCancellable>()
 
     init(modelContext: ModelContext, watchConnector: WatchConnector = WatchConnector()) {
         self.modelContext = modelContext
         self.watchConnector = watchConnector
 
-        watchConnector.$latestPayload
-            .compactMap { $0 }
-            .sink { [weak self] payload in
-                self?.addMatch(from: payload)
-            }
-            .store(in: &cancellables)
+        watchConnector.onReceivePayload = { [weak self] payload in
+            guard let self else { return .success(()) }
+            return self.addMatch(from: payload)
+        }
     }
 
-    private func addMatch(from payload: MatchGPSPayload) {
+    private func addMatch(from payload: MatchGPSPayload) -> Result<Void, Error> {
         let points = GPSPoint.calibrated(samples: payload.samples, center: payload.center, ownGoal: payload.ownGoal)
         let count = (try? modelContext.fetchCount(FetchDescriptor<MatchHistoryItem>())) ?? 0
         let item = MatchHistoryItem(
@@ -39,6 +36,13 @@ final class MatchIngestor: ObservableObject {
             heatmapPoints: points
         )
         modelContext.insert(item)
-        try? modelContext.save()
+
+        do {
+            try modelContext.save()
+            return .success(())
+        } catch {
+            modelContext.delete(item)
+            return .failure(error)
+        }
     }
 }

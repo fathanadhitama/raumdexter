@@ -21,20 +21,21 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .top) {
                 AppTheme.background.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 24) {
-                            PlayerCard(viewModel: viewModel)
-                            latestMatchHeader
-                            latestMatchCardLink
-    //                        startNewMatchButton
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        heroHeader
+
+                        VStack(spacing: 28) {
+                            StatsCard()
+                                .padding(.top, -34)
+
+                            latestMatchSection
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                        .padding(.bottom, 100) // ruang untuk bottom bar
+                        .padding(.bottom, 110)
                     }
                 }
             }
@@ -42,85 +43,160 @@ struct HomeView: View {
                 MatchDetailView(match: match)
             }
             .sheet(isPresented: $viewModel.isSharePresented) {
-                if let image = viewModel.shareImage {
-                    SharePreviewView(
-                        image: image,
-                        onSave: {
-                            Task { _ = await viewModel.saveShareImage() }
-                        },
-                        onInstagram: {
-                            UIPasteboard.general.setData(
-                                image.pngData() ?? Data(),
-                                forPasteboardType: "com.instagram.sharedSticker.backgroundImage"
-                            )
-                            guard let url = URL(string: "instagram-stories://share?source_application=\(instagramAppID)") else { return }
-                            UIApplication.shared.open(url)
-                        }
-                    )
-                }
+                shareSheet
             }
             .preferredColorScheme(.dark)
         }
     }
 
-    // MARK: - Latest Match Header
+    // MARK: - Hero
 
-    private var latestMatchHeader: some View {
-        HStack {
-            Text("Latest Match")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundColor(AppTheme.primaryText)
+    private var heroHeader: some View {
+        ZStack(alignment: .bottom) {
+            AppTheme.heroGradient
 
-            Spacer()
+            Circle()
+                .fill(AppTheme.accent.opacity(0.35))
+                .frame(width: 260, height: 260)
+                .blur(radius: 90)
+                .offset(x: 90, y: -60)
 
-            Button(
-                action: { viewModel.shareLatestMatch(latestMatch) },
-                label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 13, weight: .semibold))
-                        Text("Share")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundColor(AppTheme.accentGreen)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule()
-                            .stroke(AppTheme.accentGreen, lineWidth: 1.5)
-                    )
-                }
+            PlayerCard(viewModel: viewModel)
+        }
+        .frame(height: 330)
+        .clipShape(
+            UnevenRoundedRectangle(
+                bottomLeadingRadius: 32,
+                bottomTrailingRadius: 32,
+                style: .continuous
             )
+        )
+        .ignoresSafeArea(edges: .top)
+    }
+
+    // MARK: - Latest Match
+
+    private var latestMatchSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    SectionLabel(text: "Latest Match")
+                    Text(latestMatch?.title ?? "Belum ada match")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(AppTheme.primaryText)
+                }
+
+                Spacer()
+
+                if latestMatch != nil {
+                    shareButton
+                }
+            }
+
+            latestMatchCardLink
         }
     }
 
-    // MARK: - Latest Match Card (heatmap)
+    private var shareButton: some View {
+        Button(
+            action: { viewModel.shareLatestMatch(latestMatch) },
+            label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppTheme.accent)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(AppTheme.accentSoft))
+                    .overlay(Circle().stroke(AppTheme.accent.opacity(0.3), lineWidth: 1))
+            }
+        )
+    }
 
     @ViewBuilder
     private var latestMatchCardLink: some View {
         if let latestMatch {
             NavigationLink(value: latestMatch) {
-                latestMatchCard
+                latestMatchCard(latestMatch)
             }
             .buttonStyle(.plain)
         } else {
-            latestMatchCard
+            emptyMatchCard
         }
     }
 
-    private var latestMatchCard: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(AppTheme.cardBackground)
+    private func latestMatchCard(_ match: MatchHistoryItem) -> some View {
+        VStack(spacing: 16) {
+            HeatmapPlaceholderView(points: match.heatmapPoints)
 
-                HeatmapPlaceholderView(points: latestMatch?.heatmapPoints ?? [])
-                    .padding(16)
+            HStack(spacing: 10) {
+                metricChip(icon: "soccerball", value: "\(match.goals)")
+                metricChip(icon: "a.circle", value: "\(match.assists)")
+                metricChip(icon: "figure.run", value: match.distanceText)
+
+                Spacer()
+
+                Text(match.dateText)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(AppTheme.tertiaryText)
             }
+        }
+        .padding(14)
+        .cardSurface(cornerRadius: 24)
+    }
 
-            Text(latestMatch?.title ?? "Test Match")
-                .font(.system(size: 15, weight: .medium, design: .rounded))
+    private var emptyMatchCard: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "figure.run.circle")
+                .font(.system(size: 32, weight: .light))
+                .foregroundColor(AppTheme.tertiaryText)
+
+            Text("Mulai match dari Apple Watch")
+                .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundColor(AppTheme.secondaryText)
+
+            Text("Heatmap kamu bakal muncul di sini setelah match selesai.")
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(AppTheme.tertiaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 44)
+        .padding(.horizontal, 24)
+        .cardSurface(cornerRadius: 24)
+    }
+
+    private func metricChip(icon: String, value: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(AppTheme.accent)
+            Text(value)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundColor(AppTheme.primaryText)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(AppTheme.surfaceElevated))
+    }
+
+    // MARK: - Share
+
+    @ViewBuilder
+    private var shareSheet: some View {
+        if let image = viewModel.shareImage {
+            SharePreviewView(
+                image: image,
+                onSave: {
+                    Task { _ = await viewModel.saveShareImage() }
+                },
+                onInstagram: {
+                    UIPasteboard.general.setData(
+                        image.pngData() ?? Data(),
+                        forPasteboardType: "com.instagram.sharedSticker.stickerImage"
+                    )
+                    guard let url = URL(string: "instagram-stories://share?source_application=\(instagramAppID)") else { return }
+                    UIApplication.shared.open(url)
+                }
+            )
         }
     }
 }

@@ -34,7 +34,11 @@ final class MatchHistoryItem {
     }
 
     var distanceText: String {
-        String(format: "%.2f km", totalDistanceMeters / 1000)
+        if totalDistanceMeters < 1000 {
+            "\(Int(totalDistanceMeters)) m"
+        } else {
+            String(format: "%.2f km", totalDistanceMeters / 1000)
+        }
     }
 
     var durationText: String {

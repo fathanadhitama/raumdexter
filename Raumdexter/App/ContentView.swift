@@ -6,8 +6,18 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
+    init() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(AppTheme.background)
+        appearance.shadowColor = UIColor(AppTheme.stroke)
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+
     var body: some View {
         TabView {
             HomeView()
@@ -20,10 +30,12 @@ struct ContentView: View {
                     Label("History", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90")
                 }
         }
-        .tint(.green)
+        .tint(AppTheme.accent)
+        .preferredColorScheme(.dark)
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self], inMemory: true)
 }

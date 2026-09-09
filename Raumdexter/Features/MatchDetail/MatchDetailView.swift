@@ -18,19 +18,23 @@ struct MatchDetailView: View {
     var body: some View {
         ZStack {
             AppTheme.background.ignoresSafeArea()
+            AppTheme.backgroundGradient
+                .frame(height: 300)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 24) {
+                    titleBlock
                     heatmapCard
                     statsGrid
-                    deleteButton
+                    actionButtons
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 40)
+                .padding(.top, 8)
+                .padding(.bottom, 110)
             }
         }
-        .navigationTitle(match.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -38,29 +42,13 @@ struct MatchDetailView: View {
                     action: { viewModel.share(match) },
                     label: {
                         Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(AppTheme.accentGreen)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(AppTheme.accent)
                     }
                 )
             }
         }
-        .sheet(isPresented: $viewModel.isSharePresented) {
-            if let image = viewModel.shareImage {
-                SharePreviewView(
-                    image: image,
-                    onSave: {
-                        Task { _ = await viewModel.saveShareImage() }
-                    },
-                    onInstagram: {
-                        UIPasteboard.general.setData(
-                            image.pngData() ?? Data(),
-                            forPasteboardType: "com.instagram.sharedSticker.backgroundImage"
-                        )
-                        guard let url = URL(string: "instagram-stories://share?source_application=\(instagramAppID)") else { return }
-                        UIApplication.shared.open(url)
-                    }
-                )
-            }
-        }
+        .sheet(isPresented: $viewModel.isSharePresented) { shareSheet }
         .sheet(isPresented: $viewModel.isActivityPresented) {
             if let image = viewModel.shareImage {
                 ActivityView(activityItems: [image])
@@ -82,80 +70,147 @@ struct MatchDetailView: View {
         .preferredColorScheme(.dark)
     }
 
+    // MARK: - Title
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SectionLabel(text: match.dateText)
+
+            Text(match.title)
+                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                .foregroundColor(AppTheme.primaryText)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+        }
+    }
+
     // MARK: - Heatmap
 
     private var heatmapCard: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(AppTheme.cardBackground)
-                    .frame(height: 280)
+        VStack(alignment: .leading, spacing: 12) {
+            HeatmapPlaceholderView(points: match.heatmapPoints)
 
-                HeatmapPlaceholderView(points: match.heatmapPoints)
-                    .padding(16)
+            HStack(spacing: 6) {
+                SectionLabel(text: "Own goal", size: 9)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(AppTheme.tertiaryText)
+                SectionLabel(text: "Attacking", size: 9)
+
+                Spacer()
+
+                Text("\(match.heatmapPoints.count) titik GPS")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundColor(AppTheme.tertiaryText)
             }
-
-            Text(match.dateText)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(AppTheme.secondaryText)
         }
+        .padding(14)
+        .cardSurface(cornerRadius: 24)
     }
 
     // MARK: - Stats
 
     private var statsGrid: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                statCard(value: "\(match.goals)", label: "Goals", icon: "soccerball")
-                statCard(value: "\(match.assists)", label: "Assists", icon: "hand.point.up.left.fill")
-            }
-            HStack(spacing: 12) {
-                statCard(value: match.distanceText, label: "Distance", icon: "figure.run")
-                statCard(value: match.durationText, label: "Duration", icon: "clock.fill")
+        VStack(alignment: .leading, spacing: 12) {
+            SectionLabel(text: "Match Stats")
+
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    statCard(value: "\(match.goals)", label: "Goals", icon: "soccerball")
+                    statCard(value: "\(match.assists)", label: "Assists", icon: "a.circle")
+                }
+                HStack(spacing: 12) {
+                    statCard(value: match.distanceText, label: "Distance", icon: "figure.run")
+                    statCard(value: match.durationText, label: "Duration", icon: "clock.fill")
+                }
             }
         }
     }
 
     private func statCard(value: String, label: String, icon: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(AppTheme.accentGreen)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppTheme.accent)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(AppTheme.accentSoft))
 
-            Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(AppTheme.primaryText)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(AppTheme.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
 
-            Text(label)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(AppTheme.secondaryText)
+                Text(label)
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundColor(AppTheme.tertiaryText)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.cardBackground)
-        )
+        .cardSurface(cornerRadius: 20)
     }
 
-    // MARK: - Delete
+    // MARK: - Actions
 
-    private var deleteButton: some View {
-        Button(
-            action: { viewModel.isDeleteConfirmationPresented = true },
-            label: {
-                Text("Delete Match")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(.red)
+    private var actionButtons: some View {
+        VStack(spacing: 12) {
+            Button(
+                action: { viewModel.share(match) },
+                label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text("Share Match")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color.red.opacity(0.12))
+                    .padding(.vertical, 16)
+                    .background(AppTheme.accentGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+            )
+
+            Button(
+                action: { viewModel.isDeleteConfirmationPresented = true },
+                label: {
+                    Text("Delete Match")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppTheme.danger)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(AppTheme.danger.opacity(0.1))
+                        )
+                }
+            )
+        }
+        .padding(.top, 4)
+    }
+
+    // MARK: - Share
+
+    @ViewBuilder
+    private var shareSheet: some View {
+        if let image = viewModel.shareImage {
+            SharePreviewView(
+                image: image,
+                onSave: {
+                    Task { _ = await viewModel.saveShareImage() }
+                },
+                onInstagram: {
+                    UIPasteboard.general.setData(
+                        image.pngData() ?? Data(),
+                        forPasteboardType: "com.instagram.sharedSticker.backgroundImage"
                     )
-            }
-        )
-        .padding(.top, 8)
+                    guard let url = URL(string: "instagram-stories://share?source_application=\(instagramAppID)") else { return }
+                    UIApplication.shared.open(url)
+                }
+            )
+        }
     }
 }
 

@@ -6,39 +6,72 @@
 //
 import SwiftUI
 
+/// Visualisasi heatmap posisi pemain di atas gambar lapangan.
+///
+/// View ini nentuin tingginya sendiri lewat `aspectRatio` sesuai proporsi lapangan,
+/// jadi pemanggil cukup ngasih lebar (otomatis dari layout) tanpa perlu hardcode `.frame(height:)`.
 struct HeatmapPlaceholderView: View {
     let points: [GPSPoint]
+    let field: FieldDimensions
 
-    init(points: [GPSPoint] = GPSPoint.mockMatchPoints(count: 200)) {
+    init(points: [GPSPoint] = GPSPoint.mockMatchPoints(count: 200), field: FieldDimensions = .miniSoccer) {
         self.points = points
+        self.field = field
     }
 
     private let gridColumns = 26
-    private let gridRows = 24
+    private let gridRows = 16
+    private let cornerRadius: CGFloat = 16
 
     var body: some View {
-        ZStack {
-            Rectangle()
-                .fill(Color.green.opacity(0.08))
+        GeometryReader { geo in
+            ZStack {
+                pitchBackground
+                heatmapLayer(size: geo.size)
+                fieldLines(size: geo.size)
 
-            GeometryReader { geo in
-                ZStack {
-                    heatmapLayer(size: geo.size)
-                    fieldLines(size: geo.size)
-//                    Text("\(Int(geo.size.width))x\(Int(geo.size.height))" )
-//                        .foregroundColor(.white)
+                if points.isEmpty {
+                    emptyState
                 }
             }
-//            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .aspectRatio(field.aspectRatio, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
 
-            if points.isEmpty {
-                Text("Heatmap belum tersedia")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(AppTheme.secondaryText)
+    // MARK: - Pitch background
+
+    private var pitchBackground: some View {
+        ZStack {
+            Rectangle().fill(AppTheme.pitchGradient)
+
+            // Garis potong rumput halus biar terasa seperti lapangan asli.
+            GeometryReader { geo in
+                let stripeWidth = geo.size.width / 8
+                HStack(spacing: 0) {
+                    ForEach(0..<8, id: \.self) { index in
+                        Rectangle()
+                            .fill(Color.white.opacity(index.isMultiple(of: 2) ? 0.012 : 0))
+                            .frame(width: stripeWidth)
+                    }
+                }
             }
         }
-        .frame(height: 220)
-//        .background(.red)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(AppTheme.tertiaryText)
+            Text("Belum ada data")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundColor(AppTheme.tertiaryText)
+        }
     }
 
     // MARK: - Heat layer
@@ -117,40 +150,52 @@ struct HeatmapPlaceholderView: View {
 
     private func fieldLines(size: CGSize) -> some View {
         Path { path in
-            let width = size.width
-            let height = size.height
-            let inset: CGFloat = 0
-            let rect = CGRect(x: inset, y: inset, width: width - inset * 2, height: height - inset * 2)
+            let inset: CGFloat = 10
+            let rect = CGRect(
+                x: inset,
+                y: inset,
+                width: size.width - inset * 2,
+                height: size.height - inset * 2
+            )
 
             path.addRect(rect)
 
             // Garis tengah
-            path.move(to: CGPoint(x: width / 2, y: rect.minY))
-            path.addLine(to: CGPoint(x: width / 2, y: rect.maxY))
+            path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
 
             // Lingkaran tengah
-            let circleRadius = min(width, height) * 0.12
-            path.addEllipse(in: CGRect(x: width / 2 - circleRadius, y: height / 2 - circleRadius, width: circleRadius * 2, height: circleRadius * 2))
+            let circleRadius = rect.height * 0.16
+            path.addEllipse(
+                in: CGRect(
+                    x: rect.midX - circleRadius,
+                    y: rect.midY - circleRadius,
+                    width: circleRadius * 2,
+                    height: circleRadius * 2
+                )
+            )
 
             // Kotak penalti kiri & kanan
-            let boxWidth = rect.width * 0.16
-            let boxHeight = rect.height * 0.5
-            path.addRect(CGRect(x: rect.minX, y: height / 2 - boxHeight / 2, width: boxWidth, height: boxHeight))
-            path.addRect(CGRect(x: rect.maxX - boxWidth, y: height / 2 - boxHeight / 2, width: boxWidth, height: boxHeight))
+            let boxWidth = rect.width * 0.15
+            let boxHeight = rect.height * 0.55
+            path.addRect(CGRect(x: rect.minX, y: rect.midY - boxHeight / 2, width: boxWidth, height: boxHeight))
+            path.addRect(CGRect(x: rect.maxX - boxWidth, y: rect.midY - boxHeight / 2, width: boxWidth, height: boxHeight))
 
-            // Kotak gawang (6-yard box) kiri & kanan
-            let goalWidth = rect.width * 0.06
-            let goalHeight = rect.height * 0.24
-            path.addRect(CGRect(x: rect.minX, y: height / 2 - goalHeight / 2, width: goalWidth, height: goalHeight))
-            path.addRect(CGRect(x: rect.maxX - goalWidth, y: height / 2 - goalHeight / 2, width: goalWidth, height: goalHeight))
+            // Kotak gawang kiri & kanan
+            let goalWidth = rect.width * 0.055
+            let goalHeight = rect.height * 0.26
+            path.addRect(CGRect(x: rect.minX, y: rect.midY - goalHeight / 2, width: goalWidth, height: goalHeight))
+            path.addRect(CGRect(x: rect.maxX - goalWidth, y: rect.midY - goalHeight / 2, width: goalWidth, height: goalHeight))
         }
-        .stroke(AppTheme.accentGreen.opacity(0.45), lineWidth: 1.5)
+        .stroke(Color.white.opacity(0.22), lineWidth: 1)
     }
 }
 
 #Preview {
-    HeatmapPlaceholderView()
-        .frame(height: 290)
-        .padding()
-        .background(AppTheme.background)
+    VStack(spacing: 20) {
+        HeatmapPlaceholderView()
+        HeatmapPlaceholderView(points: [])
+    }
+    .padding(20)
+    .background(AppTheme.background)
 }

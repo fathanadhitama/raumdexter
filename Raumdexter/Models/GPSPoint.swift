@@ -83,13 +83,16 @@ extension GPSPoint {
     
     /// Ubah rekaman GPS mentah dari watch (relatif ke titik tengah lapangan) jadi koordinat
     /// lapangan ternormalisasi (0...1). `ownGoal` dipakai buat nentuin orientasi lapangan yang
-    /// sebenarnya (gak diasumsikan ngarah utara) — gawang sendiri diletakkan di sisi y mendekati 1.
+    /// sebenarnya (gak diasumsikan ngarah utara).
+    ///
+    /// Lapangan digambar landscape (gawang di kiri & kanan), jadi:
+    /// - sumbu `x` = panjang lapangan, gawang sendiri di kiri (x → 0), arah serang ke kanan
+    /// - sumbu `y` = lebar lapangan
     static func calibrated(
         samples: [LocationSample],
         center: LocationSample,
         ownGoal: LocationSample,
-        fieldLength: Double = 42,
-        fieldWidth: Double = 25
+        field: FieldDimensions = .miniSoccer
     ) -> [GPSPoint] {
         let centerLatRad = center.latitude * .pi / 180
         let metersPerDegreeLat = 111_132.92 - 559.82 * cos(2 * centerLatRad)
@@ -99,20 +102,20 @@ extension GPSPoint {
         let bearing = bearingRadians(from: center, to: ownGoal)
 
         return samples.map { sample in
-            let dx = (sample.longitude - center.longitude) * metersPerDegreeLon
-            let dy = (sample.latitude - center.latitude) * metersPerDegreeLat
+            let deltaEast = (sample.longitude - center.longitude) * metersPerDegreeLon
+            let deltaNorth = (sample.latitude - center.latitude) * metersPerDegreeLat
 
-            // Proyeksikan (dx, dy) ke sumbu lapangan: "forward" = ke arah gawang sendiri,
-            // "right" = tegak lurus terhadapnya (lebar lapangan).
-            let forward = dx * sin(bearing) + dy * cos(bearing)
-            let right = dx * cos(bearing) - dy * sin(bearing)
+            // Proyeksikan ke sumbu lapangan: "toOwnGoal" searah gawang sendiri,
+            // "acrossField" tegak lurus terhadapnya (lebar lapangan).
+            let toOwnGoal = deltaEast * sin(bearing) + deltaNorth * cos(bearing)
+            let acrossField = deltaEast * cos(bearing) - deltaNorth * sin(bearing)
 
-            let x = 0.5 + right / fieldWidth
-            let y = 0.5 + forward / fieldLength
+            let posX = 0.5 - toOwnGoal / field.lengthMeters
+            let posY = 0.5 + acrossField / field.widthMeters
 
             return GPSPoint(
-                x: min(max(x, 0), 1),
-                y: min(max(y, 0), 1),
+                x: min(max(posX, 0), 1),
+                y: min(max(posY, 0), 1),
                 timestamp: sample.timestamp
             )
         }

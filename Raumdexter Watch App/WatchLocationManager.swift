@@ -21,7 +21,7 @@ final class WatchLocationManager: NSObject, ObservableObject, CLLocationManagerD
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
-        manager.distanceFilter = 4 // meter, batas update supaya ga overload update tiap gerak
+        manager.distanceFilter = 20 // meter, batas update supaya ga overload update tiap gerak
         manager.activityType = .fitness
     }
     

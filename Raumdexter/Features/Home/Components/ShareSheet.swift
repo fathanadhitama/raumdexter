@@ -56,8 +56,8 @@ struct SharePreviewView: View {
                     .foregroundColor(Color.black.opacity(0.42))
 
                 HStack(spacing: 26) {
-                    ShareActionButton(title: "Instagram", systemImage: "camera.fill", color: .pink, action: onInstagram)
-                    ShareActionButton(title: "Save image", systemImage: "arrow.down.to.line", color: Color.black.opacity(0.55), action: onSave)
+                    ShareActionButton(title: "Instagram", icon: Image("instagram-logo"), color: .pink, action: onInstagram)
+                    ShareActionButton(title: "Save image", icon: Image(systemName: "arrow.down.to.line"), color: Color.black.opacity(0.55), action: onSave)
                 }
             }
             .padding(.bottom, 30)
@@ -71,21 +71,30 @@ struct SharePreviewView: View {
 
 private struct ShareActionButton: View {
     let title: String
-    let systemImage: String
+    let icon: Image
     let color: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 23, weight: .semibold))
-                    .foregroundColor(color)
+                icon
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 23, height: 23)
+                    .foregroundStyle(color)
                     .frame(width: 66, height: 66)
-                    .background(Color.black.opacity(0.035), in: Circle())
+                    .background(
+                        Color.black.opacity(0.035),
+                        in: Circle()
+                    )
 
                 Text(title)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(
+                        size: 14,
+                        weight: .medium,
+                        design: .rounded
+                    ))
                     .foregroundColor(Color.black.opacity(0.58))
                     .lineLimit(1)
             }

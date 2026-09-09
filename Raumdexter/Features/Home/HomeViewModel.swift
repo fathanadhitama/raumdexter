@@ -15,10 +15,8 @@ final class HomeViewModel: ObservableObject {
     @Published var player: PlayerProfile
     @Published var isSharePresented: Bool = false
     @Published var shareImage: UIImage?
- 
-    var watchConnector: WatchConnector = WatchConnector()
-    private var cancellables = Set<AnyCancellable>()
-    
+
+
     init(
         player: PlayerProfile = HomeViewModel.mockPlayer
     ) {
