@@ -11,11 +11,12 @@ import SwiftUI
 /// Background-nya dibatasi ke shape membulat supaya sudutnya tetap transparan di PNG.
 struct ShareableMatchCard: View {
     let match: MatchHistoryItem
+    let heatImage: CGImage?
 
     var body: some View {
         VStack(spacing: 18) {
             header
-            HeatmapPlaceholderView(points: match.heatmapPoints)
+            HeatmapPlaceholderView(points: match.heatmapPoints, injectedImage: heatImage)
             statsRow
         }
         .padding(22)
@@ -38,34 +39,51 @@ struct ShareableMatchCard: View {
                     .foregroundColor(AppTheme.primaryText)
                     .lineLimit(2)
 
-                Text(match.dateText)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(AppTheme.tertiaryText)
+//                Text(match.dateText)
+//                    .font(.system(size: 12, weight: .medium))
+//                    .foregroundColor(AppTheme.tertiaryText)
             }
 
-            Spacer(minLength: 12)
+//            Spacer(minLength: 12)
+//
+//            Text("RAUMDEXTER")
+//                .font(.system(size: 10, weight: .heavy, design: .rounded))
+//                .tracking(1.4)
+//                .foregroundColor(AppTheme.accent)
+//                .padding(.horizontal, 10)
+//                .padding(.vertical, 6)
+//                .background(Capsule().fill(AppTheme.accentSoft))
+        }
+    }
 
-            Text("RAUMDEXTER")
+    private var statsRow: some View {
+        VStack {
+            HStack(spacing: 0) {
+                statColumn(value: "\(match.goals)", label: "Goals")
+                divider
+                statColumn(value: "\(match.assists)", label: "Assists")
+                divider
+                statColumn(value: match.distanceText, label: "Distance")
+                divider
+                statColumn(value: match.durationText, label: "Duration")
+            }
+            .padding(.top, 14)
+            .padding(.bottom, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(AppTheme.surface)
+            )
+            
+            Text("BY RAUMDEXTER")
                 .font(.system(size: 10, weight: .heavy, design: .rounded))
                 .tracking(1.4)
                 .foregroundColor(AppTheme.accent)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(Capsule().fill(AppTheme.accentSoft))
+            
         }
-    }
-
-    private var statsRow: some View {
-        HStack(spacing: 0) {
-            statColumn(value: "\(match.goals)", label: "Goals")
-            divider
-            statColumn(value: "\(match.assists)", label: "Assists")
-            divider
-            statColumn(value: match.distanceText, label: "Distance")
-            divider
-            statColumn(value: match.durationText, label: "Duration")
-        }
-        .padding(.vertical, 14)
+        .padding(.bottom, 14)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(AppTheme.surface)
@@ -104,7 +122,7 @@ struct ShareableMatchCard: View {
         heatmapPoints: GPSPoint.mockMatchPoints(count: 300)
     )
 
-    ShareableMatchCard(match: mockMatch)
+    ShareableMatchCard(match: mockMatch, heatImage: nil)
         .padding(30)
         .background(Color.gray)
 }

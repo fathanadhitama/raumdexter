@@ -13,12 +13,15 @@ import SwiftUI
 struct HeatmapPlaceholderView: View {
     let points: [GPSPoint]
     let field: FieldDimensions
+    let injectedImage: CGImage?
 
     @State private var heatImage: CGImage?
 
-    init(points: [GPSPoint] = GPSPoint.mockMatchPoints(count: 200), field: FieldDimensions = .miniSoccer) {
+    init(points: [GPSPoint] = GPSPoint.mockMatchPoints(count: 200), field: FieldDimensions = .miniSoccer,
+         injectedImage: CGImage? = nil) {
         self.points = points
         self.field = field
+        self.injectedImage = injectedImage
     }
 
     private let cornerRadius: CGFloat = 16
@@ -36,8 +39,8 @@ struct HeatmapPlaceholderView: View {
             ZStack {
                 pitchBackground
 
-                if let heatImage {
-                    Image(decorative: heatImage, scale: 1)
+                if let image = injectedImage ?? heatImage {
+                    Image(decorative: image, scale: 1)
                         .resizable()
                         .interpolation(.high)
                 }
@@ -61,6 +64,8 @@ struct HeatmapPlaceholderView: View {
     }
 
     private func renderHeatmap() async {
+        guard injectedImage == nil else { return }
+
         guard !points.isEmpty else {
             heatImage = nil
             return

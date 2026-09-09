@@ -16,7 +16,6 @@ final class HomeViewModel: ObservableObject {
     @Published var isSharePresented: Bool = false
     @Published var shareImage: UIImage?
 
-
     init(
         player: PlayerProfile = HomeViewModel.mockPlayer
     ) {
@@ -31,7 +30,13 @@ final class HomeViewModel: ObservableObject {
     
     func shareLatestMatch(_ match: MatchHistoryItem?) {
         guard let match else { return }
-        shareImage = renderImage(ShareableMatchCard(match: match))
+        let heatPoints = match.heatmapPoints.map { HeatPoint(posX: $0.x, posY: $0.y) }
+        let heat = HeatmapRenderer.render(
+            points: heatPoints,
+            aspectRatio: FieldDimensions.miniSoccer.aspectRatio
+        )
+
+        shareImage = renderImage(ShareableMatchCard(match: match, heatImage: heat))
         isSharePresented = shareImage != nil
     }
 
