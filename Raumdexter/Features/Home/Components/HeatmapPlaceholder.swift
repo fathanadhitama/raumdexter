@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-/// Visualisasi heatmap posisi pemain di atas gambar lapangan.
+/// Visualisasi heatmap posisi pemain (gaya KDE plot) di atas gambar lapangan.
 ///
 /// View ini nentuin tingginya sendiri lewat `aspectRatio` sesuai proporsi lapangan,
 /// jadi pemanggil cukup ngasih lebar (otomatis dari layout) tanpa perlu hardcode `.frame(height:)`.
@@ -14,20 +14,34 @@ struct HeatmapPlaceholderView: View {
     let points: [GPSPoint]
     let field: FieldDimensions
 
+    @State private var heatImage: CGImage?
+
     init(points: [GPSPoint] = GPSPoint.mockMatchPoints(count: 200), field: FieldDimensions = .miniSoccer) {
         self.points = points
         self.field = field
     }
 
-    private let gridColumns = 26
-    private let gridRows = 16
     private let cornerRadius: CGFloat = 16
+
+    /// Kunci stabil per dataset — render ulang cuma kalau datanya beneran ganti,
+    /// bukan tiap kali view redraw (penting buat list History yang di-scroll).
+    private var renderKey: String {
+        let first = points.first?.timestamp.timeIntervalSince1970 ?? 0
+        let last = points.last?.timestamp.timeIntervalSince1970 ?? 0
+        return "\(points.count)-\(first)-\(last)"
+    }
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
                 pitchBackground
-                heatmapLayer(size: geo.size)
+
+                if let heatImage {
+                    Image(decorative: heatImage, scale: 1)
+                        .resizable()
+                        .interpolation(.high)
+                }
+
                 fieldLines(size: geo.size)
 
                 if points.isEmpty {
@@ -41,6 +55,24 @@ struct HeatmapPlaceholderView: View {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)
         )
+        .task(id: renderKey) {
+            await renderHeatmap()
+        }
+    }
+
+    private func renderHeatmap() async {
+        guard !points.isEmpty else {
+            heatImage = nil
+            return
+        }
+
+        // Baca properti model di main actor dulu, komputasi beratnya baru dilempar ke background.
+        let heatPoints = points.map { HeatPoint(posX: $0.x, posY: $0.y) }
+        let aspectRatio = field.aspectRatio
+
+        heatImage = await Task.detached(priority: .userInitiated) {
+            HeatmapRenderer.render(points: heatPoints, aspectRatio: aspectRatio)
+        }.value
     }
 
     // MARK: - Pitch background
@@ -72,78 +104,6 @@ struct HeatmapPlaceholderView: View {
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundColor(AppTheme.tertiaryText)
         }
-    }
-
-    // MARK: - Heat layer
-
-    private struct GridKey: Hashable { let col: Int; let row: Int }
-
-    private func densityGrid() -> [GridKey: Double] {
-        var grid: [GridKey: Double] = [:]
-        for point in points {
-            let col = min(max(Int(point.x * Double(gridColumns)), 0), gridColumns - 1)
-            let row = min(max(Int(point.y * Double(gridRows)), 0), gridRows - 1)
-            grid[GridKey(col: col, row: row), default: 0] += 1
-        }
-        return grid
-    }
-
-    private func heatmapLayer(size: CGSize) -> some View {
-        let grid = densityGrid()
-        let maxDensity = grid.values.max() ?? 1
-        let cellW = size.width / CGFloat(gridColumns)
-        let cellH = size.height / CGFloat(gridRows)
-        let radius = max(cellW, cellH) * 1.6
-
-        // Diurutkan dari intensitas terendah ke tertinggi supaya area terpanas (merah)
-        // digambar paling akhir dan tidak tertimbun warna dingin di sekitarnya.
-        let orderedCells = grid.sorted { $0.value < $1.value }
-
-        return Canvas { context, _ in
-            context.addFilter(.blur(radius: radius * 0.5))
-            context.drawLayer { ctx in
-                for (key, count) in orderedCells {
-                    let intensity = min(count / maxDensity, 1.0)
-                    guard intensity > 0.02 else { continue }
-
-                    let centerX = (CGFloat(key.col) + 0.5) * cellW
-                    let centerY = (CGFloat(key.row) + 0.5) * cellH
-                    let rect = CGRect(x: centerX - radius, y: centerY - radius, width: radius * 2, height: radius * 2)
-
-                    ctx.opacity = min(0.25 + intensity * 0.65, 0.9)
-                    ctx.fill(Path(ellipseIn: rect), with: .color(heatColor(for: intensity)))
-                }
-            }
-        }
-    }
-
-    /// Palet klasik heatmap: biru (jarang dilewati) -> hijau -> kuning -> merah (paling sering dilewati).
-    private func heatColor(for intensity: Double) -> Color {
-        // swiftlint:disable:next large_tuple
-        let stops: [(t: Double, r: Double, g: Double, b: Double)] = [
-            (0.0, 0.20, 0.40, 0.95),
-            (0.35, 0.20, 0.85, 0.45),
-            (0.6, 0.95, 0.85, 0.20),
-            (0.8, 0.95, 0.55, 0.15),
-            (1.0, 0.90, 0.15, 0.15)
-        ]
-
-        let clamped = min(max(intensity, 0), 1)
-        for stop in 1..<stops.count {
-            let prev = stops[stop - 1]
-            let curr = stops[stop]
-            if clamped <= curr.t {
-                let span = curr.t - prev.t
-                let localT = span > 0 ? (clamped - prev.t) / span : 0
-                return Color(
-                    red: prev.r + (curr.r - prev.r) * localT,
-                    green: prev.g + (curr.g - prev.g) * localT,
-                    blue: prev.b + (curr.b - prev.b) * localT
-                )
-            }
-        }
-        let last = stops[stops.count - 1]
-        return Color(red: last.r, green: last.g, blue: last.b)
     }
 
     // MARK: - Field lines
@@ -187,13 +147,13 @@ struct HeatmapPlaceholderView: View {
             path.addRect(CGRect(x: rect.minX, y: rect.midY - goalHeight / 2, width: goalWidth, height: goalHeight))
             path.addRect(CGRect(x: rect.maxX - goalWidth, y: rect.midY - goalHeight / 2, width: goalWidth, height: goalHeight))
         }
-        .stroke(Color.white.opacity(0.22), lineWidth: 1)
+        .stroke(Color.white.opacity(0.38), lineWidth: 1)
     }
 }
 
 #Preview {
     VStack(spacing: 20) {
-        HeatmapPlaceholderView()
+        HeatmapPlaceholderView(points: GPSPoint.mockMatchPoints(count: 400))
         HeatmapPlaceholderView(points: [])
     }
     .padding(20)
