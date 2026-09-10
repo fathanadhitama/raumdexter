@@ -45,6 +45,9 @@ struct HomeView: View {
             .sheet(isPresented: $viewModel.isSharePresented) {
                 shareSheet
             }
+            .sheet(isPresented: $viewModel.isEditProfilePresented) {
+                EditProfileSheet()
+            }
             .preferredColorScheme(.dark)
         }
     }
@@ -61,7 +64,7 @@ struct HomeView: View {
                 .blur(radius: 90)
                 .offset(x: 90, y: -60)
 
-            PlayerCard(viewModel: viewModel)
+            PlayerCard(onEdit: { viewModel.editProfile() })
         }
         .frame(height: 330)
         .clipShape(
@@ -81,7 +84,7 @@ struct HomeView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     SectionLabel(text: "Latest Match")
-                    Text(latestMatch?.title ?? "Belum ada match")
+                    Text(latestMatch?.title ?? "No match saved yet")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(AppTheme.primaryText)
                 }
@@ -153,7 +156,7 @@ struct HomeView: View {
                 .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundColor(AppTheme.secondaryText)
 
-            Text("Heatmap kamu bakal muncul di sini setelah match selesai.")
+            Text("Heatmap will be shown here when you play.")
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(AppTheme.tertiaryText)
                 .multilineTextAlignment(.center)
@@ -185,9 +188,7 @@ struct HomeView: View {
         if let image = viewModel.shareImage {
             SharePreviewView(
                 image: image,
-                onSave: {
-                    Task { _ = await viewModel.saveShareImage() }
-                },
+                onSave: { await viewModel.saveShareImage() },
                 onInstagram: {
                     UIPasteboard.general.setData(
                         image.pngData() ?? Data(),
@@ -203,5 +204,5 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
-        .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self], inMemory: true)
+        .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self, PlayerProfile.self], inMemory: true)
 }

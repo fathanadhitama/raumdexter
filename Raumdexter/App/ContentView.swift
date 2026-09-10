@@ -22,7 +22,7 @@ struct ContentView: View {
         TabView {
             HomeView()
                 .tabItem {
-                    Label("Home", systemImage: "house.fill")
+                    Label("Profile", systemImage: "person.fill")
                 }
 
             HistoryView()
@@ -37,5 +37,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self], inMemory: true)
+        .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self, PlayerProfile.self], inMemory: true)
 }

@@ -49,7 +49,7 @@ struct ContentView: View {
                         .progressViewStyle(.circular)
                         .tint(WatchTheme.accent)
 
-                    Text("Menyimpan match…")
+                    Text("Saving match…")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(WatchTheme.primaryText)
                 }
@@ -61,8 +61,8 @@ struct ContentView: View {
             resultCard(
                 icon: "checkmark.circle.fill",
                 tint: WatchTheme.success,
-                title: "Match Tersimpan",
-                subtitle: "iPhone konfirmasi datanya udah masuk.",
+                title: "Match Saved",
+                subtitle: "iPhone confirmed to save the match.",
                 primaryButtonTitle: "Selesai",
                 primaryTint: WatchTheme.success,
                 primaryAction: { viewModel.acknowledgeSaveResult() }
@@ -72,9 +72,9 @@ struct ContentView: View {
             resultCard(
                 icon: "icloud.and.arrow.up",
                 tint: WatchTheme.accent,
-                title: "Menunggu Koneksi",
-                subtitle: "iPhone gak keliatan sekarang. Data dikirim di background begitu terhubung — belum bisa dipastikan tersimpan.",
-                primaryButtonTitle: "Mengerti",
+                title: "Waiting for iPhone",
+                subtitle: "iPhone is not detected for now. Data will be sent when iPhone is detected.",
+                primaryButtonTitle: "OK",
                 primaryTint: WatchTheme.accent,
                 primaryAction: { viewModel.acknowledgeSaveResult() }
             )
@@ -83,12 +83,12 @@ struct ContentView: View {
             resultCard(
                 icon: "exclamationmark.triangle.fill",
                 tint: WatchTheme.danger,
-                title: "Gagal Tersimpan",
+                title: "Failed to save match",
                 subtitle: message,
-                primaryButtonTitle: "Coba Lagi",
+                primaryButtonTitle: "Try Again",
                 primaryTint: WatchTheme.accent,
                 primaryAction: { viewModel.retrySendMatch() },
-                secondaryButtonTitle: "Buang Match",
+                secondaryButtonTitle: "Delete Match",
                 secondaryAction: { viewModel.discardFailedMatch() }
             )
         }
@@ -159,7 +159,7 @@ struct ContentView: View {
                     .tracking(1.4)
                     .foregroundStyle(WatchTheme.secondaryText)
 
-                Text("Siap rekam match")
+                Text("Track your game")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(WatchTheme.primaryText)
             }
@@ -167,7 +167,7 @@ struct ContentView: View {
             Spacer(minLength: 0)
 
             if viewModel.isLocationDenied {
-                InlineErrorText(message: "Izin lokasi mati. Aktifkan di Settings › Privacy.")
+                InlineErrorText(message: "Location permission is denied. Activate location permission in Settings › Privacy.")
             }
 
             PrimaryWatchButton(
@@ -188,7 +188,7 @@ struct ContentView: View {
         calibrationStep(
             step: 1,
             icon: "scope",
-            title: "Berdiri di tengah lapangan",
+            title: "Stand in the center of the field",
             buttonTitle: "Submit Center",
             action: { await viewModel.submitFieldCenter() }
         )
@@ -200,7 +200,7 @@ struct ContentView: View {
         calibrationStep(
             step: 2,
             icon: "figure.walk",
-            title: "Jalan ke gawang sendiri",
+            title: "Walk towards your team's goal",
             buttonTitle: "Submit Direction",
             action: { await viewModel.submitOwnGoalDirection() }
         )
@@ -233,7 +233,7 @@ struct ContentView: View {
 
                 PrimaryWatchButton(
                     title: buttonTitle,
-                    loadingTitle: "Mencari GPS…",
+                    loadingTitle: "Detecting location…",
                     systemImage: "location.fill",
                     isLoading: viewModel.isRequestingLocation,
                     action: { Task { await action() } }
@@ -274,7 +274,7 @@ struct ContentView: View {
 
                 PrimaryWatchButton(
                     title: "End Match",
-                    loadingTitle: "Mengirim…",
+                    loadingTitle: "Sending…",
                     systemImage: "stop.fill",
                     tint: WatchTheme.danger,
                     isLoading: viewModel.isEndingMatch,

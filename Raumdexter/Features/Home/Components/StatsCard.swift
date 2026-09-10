@@ -68,5 +68,5 @@ struct StatsCard: View {
     StatsCard()
         .padding(20)
         .background(AppTheme.background)
-        .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self], inMemory: true)
+        .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self, PlayerProfile.self], inMemory: true)
 }

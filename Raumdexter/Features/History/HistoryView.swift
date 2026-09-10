@@ -127,11 +127,11 @@ struct HistoryView: View {
                 .font(.system(size: 38, weight: .light))
                 .foregroundColor(AppTheme.tertiaryText)
 
-            Text("Belum ada match tersimpan")
+            Text("No saved match")
                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .foregroundColor(AppTheme.secondaryText)
 
-            Text("Selesaikan satu match dari Apple Watch untuk melihat riwayatnya di sini.")
+            Text("Finish a match from Apple Watch to see the history here")
                 .font(.system(size: 12))
                 .foregroundColor(AppTheme.tertiaryText)
                 .multilineTextAlignment(.center)

@@ -17,7 +17,8 @@ struct RaumdexterApp: App {
         do {
             let container = try ModelContainer(
                 for: MatchHistoryItem.self,
-                GPSPoint.self
+                GPSPoint.self,
+                PlayerProfile.self
             )
 
             modelContainer = container

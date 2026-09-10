@@ -71,7 +71,7 @@ internal class WatchAppViewModel: ObservableObject {
         defer { isRequestingLocation = false }
 
         guard let location = await locationManager.requestOneShotLocation() else {
-            errorMessage = "Gagal dapat sinyal GPS. Coba lagi di area terbuka."
+            errorMessage = "Failed to get location. Try again in open area."
             return
         }
 
@@ -91,7 +91,7 @@ internal class WatchAppViewModel: ObservableObject {
         defer { isRequestingLocation = false }
 
         guard let location = await locationManager.requestOneShotLocation() else {
-            errorMessage = "Gagal dapat sinyal GPS. Coba lagi di area terbuka."
+            errorMessage = "Failed to get location. Try again in open area."
             return
         }
 
@@ -184,7 +184,7 @@ internal class WatchAppViewModel: ObservableObject {
         defer { isEndingMatch = false }
 
         guard let fieldCenter, let ownGoal else {
-            saveStatus = .failed("Data kalibrasi lapangan hilang, match tidak bisa disimpan.")
+            saveStatus = .failed("Field calibration data is missing, match is not saved.")
             return
         }
 

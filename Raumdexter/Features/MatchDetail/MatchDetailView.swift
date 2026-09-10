@@ -54,18 +54,23 @@ struct MatchDetailView: View {
                 ActivityView(activityItems: [image])
             }
         }
-        .confirmationDialog(
-            "Hapus match ini?",
-            isPresented: $viewModel.isDeleteConfirmationPresented,
-            titleVisibility: .visible
-        ) {
-            Button("Hapus", role: .destructive) {
+        .alert("Delete Match?", isPresented: $viewModel.isDeleteConfirmationPresented) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
                 viewModel.delete(match, context: modelContext)
                 dismiss()
             }
-            Button("Batal", role: .cancel) {}
         } message: {
-            Text("Data GPS dan statistik match ini akan dihapus permanen.")
+            Text("“\(match.title)” and all of its data will be deleted.")
+        }
+        .alert("Change Match Title", isPresented: $viewModel.isRenamePresented) {
+            TextField("Match Title", text: $viewModel.draftTitle)
+                .textInputAutocapitalization(.words)
+
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                viewModel.commitRename(match, context: modelContext)
+            }
         }
         .preferredColorScheme(.dark)
     }
@@ -76,11 +81,22 @@ struct MatchDetailView: View {
         VStack(alignment: .leading, spacing: 6) {
             SectionLabel(text: match.dateText)
 
-            Text(match.title)
-                .font(.system(size: 28, weight: .heavy, design: .rounded))
-                .foregroundColor(AppTheme.primaryText)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
+            Button(action: { viewModel.startRename(match) }) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(match.title)
+                        .font(.system(size: 28, weight: .heavy, design: .rounded))
+                        .foregroundColor(AppTheme.primaryText)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .multilineTextAlignment(.leading)
+
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppTheme.accent)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Change match name")
         }
     }
 
@@ -99,7 +115,7 @@ struct MatchDetailView: View {
 
                 Spacer()
 
-                Text("\(match.heatmapPoints.count) titik GPS")
+                Text("\(match.heatmapPoints.count) GPS points")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundColor(AppTheme.tertiaryText)
             }
@@ -198,9 +214,7 @@ struct MatchDetailView: View {
         if let image = viewModel.shareImage {
             SharePreviewView(
                 image: image,
-                onSave: {
-                    Task { _ = await viewModel.saveShareImage() }
-                },
+                onSave: { await viewModel.saveShareImage() },
                 onInstagram: {
                     UIPasteboard.general.setData(
                         image.pngData() ?? Data(),
@@ -227,5 +241,5 @@ struct MatchDetailView: View {
             )
         )
     }
-    .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self], inMemory: true)
+    .modelContainer(for: [MatchHistoryItem.self, GPSPoint.self, PlayerProfile.self], inMemory: true)
 }

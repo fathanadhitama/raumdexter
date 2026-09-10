@@ -16,6 +16,21 @@ final class MatchDetailViewModel: ObservableObject {
     @Published var isActivityPresented = false
     @Published var shareImage: UIImage?
     @Published var isDeleteConfirmationPresented = false
+    @Published var isRenamePresented = false
+    @Published var draftTitle = ""
+
+    func startRename(_ match: MatchHistoryItem) {
+        draftTitle = match.title
+        isRenamePresented = true
+    }
+
+    func commitRename(_ match: MatchHistoryItem, context: ModelContext) {
+        let trimmed = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != match.title else { return }
+
+        match.title = trimmed
+        try? context.save()
+    }
 
     func share(_ match: MatchHistoryItem) {
         let heatPoints = match.heatmapPoints.map { HeatPoint(posX: $0.x, posY: $0.y) }
