@@ -239,7 +239,7 @@ struct ContentView: View {
                     action: { Task { await action() } }
                 )
 
-                Button("Batal") { viewModel.cancelMatch() }
+                Button("Cancel") { viewModel.cancelMatch() }
                     .font(.system(size: 12, weight: .medium))
                     .buttonStyle(.plain)
                     .foregroundStyle(WatchTheme.tertiaryText)
